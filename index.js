@@ -7,14 +7,16 @@ const { Redis } = require("ioredis");
 
 const PORT = process.env.PORT || 3000;
 
+// Prisma client
 const prisma = new PrismaClient();
 
+// Redis adapter
 const pubClient = new Redis();
-
 const subClient = pubClient.duplicate();
 
 const redisAdapter = createAdapter(pubClient, subClient);
 
+// Server
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
@@ -22,9 +24,11 @@ const io = new Server(httpServer, {
 });
 
 async function main() {
+  // Socket connection
   io.on("connection", (socket) => {
     console.log("Socket client connected with ID:", socket.id);
 
+    // Send message
     socket.on("message", async (data) => {
       console.log("Message received:", data);
 
@@ -38,6 +42,7 @@ async function main() {
       socket.to(data.chatId).emit("message", message);
     });
 
+    // Join chat room
     socket.on("join-chat", async (data) => {
       socket.join(data.chatId);
     });
@@ -47,6 +52,7 @@ async function main() {
     });
   });
 
+  // Get chat messages
   app.get("/chats/:chatId/messages", async (req, res) => {
     const chatId = req.params.chatId;
 
@@ -70,6 +76,7 @@ async function main() {
     res.json({ limit, offset, messages });
   });
 
+  // Run server
   httpServer.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
   });
